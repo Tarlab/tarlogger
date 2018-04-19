@@ -24,14 +24,14 @@ TELEGRAM = {
 }
 
 SLACK = {
-	"hook"= configuration_data["slack"]["hook"]
+	"hook": configuration_data["slack"]["hook"]
 }
 
 SENSOR = configuration_data["sensor"]
 
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
-temp_sensor ='/sys/bus/w1/devices/28-0000074fd656/w1_slave'.format(SENSOR.get("sensor"))
+temp_sensor ='/sys/bus/w1/devices/{0}/w1_slave'.format(SENSOR.get("sensor"))
 
 influx = InfluxDBClient(INFLUX.get("host"), INFLUX.get("port"), 
 			INFLUX.get("username"), INFLUX.get("password"), 
