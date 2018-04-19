@@ -42,7 +42,6 @@ GPIO.setmode(GPIO.BOARD)
 GPIO.setup(18, GPIO.IN, pull_up_down=GPIO.PUD_UP)
 
 last_button_state = 0
-temperature = 0
 
 status = ['Lab closed - temperature {0}C','Lab open - temperature {0}C']
 
@@ -50,37 +49,35 @@ def raw_to_c(raw):
 	return float(raw) / 1000.0
 
 def read_temp():
-	global temperature
 	with open(temp_sensor,'r') as temp_file:
 		temp_line = [line for line in file.readlines() if 't=' in line]
 	ext_temp_c_raw = temp_line[0].replace('=', ' ').split()[-1]
 	return raw_to_c(ext_temp_c_raw)
 
-def do_telegram_alert(lab_status):
+def do_telegram_alert(lab_status, temperature):
 	response = requests.post(
 		url='https://api.telegram.org/bot{0}/sendMessage'.format(TELEGRAM.get("bot_token")),
 		data={'chat_id': TELEGRAM.get("chat_id"), 'text': status[lab_status].format(temperature)}
 	).json()
 
-def do_slack_alert(lab_status):
+def do_slack_alert(lab_status, temperature):
 	response = requests.post(
 		url='https://hooks.slack.com/services/{0}'.format(SLACK.get("hook")),
 		json={'text': status[lab_status].format(temperature)}
 	)
 
 def read_button():
-	global last_button_state
 	button_state = GPIO.input(18)
-	if button_state != last_button_state:
-		do_telegram_alert(button_state)
-		do_slack_alert(button_state)
-	last_button_state = button_state
 	return button_state
 
 try:
 	while True:
 		temperature = read_temp()
-		button = read_button()
+		button_state = read_button()
+		if button_state != last_button_state:
+			do_telegram_alert(button_state, temperature)
+			do_slack_alert(button_state, temperature)
+			last_button_state = button_state
 		temp_json = [{
 			"measurement": "lab_temp",
 			"tags": {
@@ -95,10 +92,10 @@ try:
 				"device": "switch"
 			},
 			"fields": {
-				"value": button
+				"value": button_state
 			}
 		}]
-		print("Temp: ", temperature, " Button: ", button)
+		print("Temp: ", temperature, " Button: ", button_state)
 		influx.write_points(temp_json)
 		time.sleep(10)
 
