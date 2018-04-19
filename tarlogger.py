@@ -31,7 +31,7 @@ SENSOR = configuration_data["sensor"]
 
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
-temp_sensor ='/sys/bus/w1/devices/{0}/w1_slave'.format(SENSOR.get("sensor"))
+temp_sensor ='/sys/bus/w1/devices/{0}/w1_slave'.format(SENSOR)
 
 influx = InfluxDBClient(INFLUX.get("host"), INFLUX.get("port"), 
 			INFLUX.get("username"), INFLUX.get("password"), 
@@ -51,10 +51,8 @@ def raw_to_c(raw):
 
 def read_temp():
 	global temperature
-	file = open(temp_sensor,'r')
-	lines = file.readlines()
-	file.close()
-	temp_line = [l for l in lines if 't=' in l]
+	with open(temp_sensor,'r') as temp_file:
+		temp_line = [line for line in file.readlines() if 't=' in line]
 	ext_temp_c_raw = temp_line[0].replace('=', ' ').split()[-1]
 	return raw_to_c(ext_temp_c_raw)
 
@@ -66,7 +64,7 @@ def do_telegram_alert(lab_status):
 
 def do_slack_alert(lab_status):
 	response = requests.post(
-		url='https://hooks.slack.com/services/{0}'.format(SLACK.get("hook"),
+		url='https://hooks.slack.com/services/{0}'.format(SLACK.get("hook")),
 		json={'text': status[lab_status].format(temperature)}
 	)
 
