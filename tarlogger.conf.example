@@ -1,0 +1,17 @@
+{
+	"influx": {
+         "host":"",
+         "port": "",
+         "username": "",
+         "password": "",
+         "database": ""
+	},
+	"telegram": {
+	 "bot_token": "",
+	 "chat_id": ""
+	},
+	"slack": {
+	 "hook": ""
+	},
+	"sensor":""
+}
